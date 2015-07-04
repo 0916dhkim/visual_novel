@@ -20,6 +20,8 @@ static int SCENE_CHARACTER_SELECTION_EDITOR = 5;
 static int SCENE_CG = 6;
 static int SCENE_CG_EDITOR = 7;
 
+static int ANIMATION_TYPE_NONE = 0;
+
 class SceneImage{
 private:
 	char image_name[256];
@@ -28,8 +30,6 @@ private:
 	int animation_type;
 public:
 };
-
-static int ANIMATION_TYPE_NONE = 0;
 
 class Scene{
 	private:
