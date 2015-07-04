@@ -1,0 +1,23 @@
+id 102323 {
+	type scene;
+};
+image background
+{
+	name hello.png;
+	animation none;
+};
+
+image particle{
+	name particle.png;
+	animation fly;
+};
+
+choice 1{
+	content "How are you";
+	attribute (self, time, +2);
+	attribute (Yonu, attraction, +200);
+};
+
+next 2304929{
+	condition (self, time, 0, 10);	
+};
