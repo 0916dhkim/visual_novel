@@ -10,8 +10,8 @@ image background
 image particle{
 	name particle.png;
 	animation fly;
-	location (13, 58);
-	location (13, 58);
+	position (13, 58);
+	position (13, 58);
 };
 
 choice 1{
