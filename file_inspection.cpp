@@ -1,29 +1,27 @@
-#ifdef _WIN32
-#define _CRT_SECURE_NO_DEPRECATE
-#endif
-
 #ifndef FILE_INSPECTION
 #define FILE_INSPECTION
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+#include <fstream>
+#include <string>
 #include "file_inspection.h"
+using namespace std;
 
 struct SceneImageData{
-	char image_file_name[256];
-	char image_type[256];
-	char animation_type[256];
+	string image_file_name;
+	string image_type;
+	string animation_type;
 };
 
 struct ChangeAttribute{
-	char character_name[256];
-	char attribute_name[256];
+	string character_name;
+	string attribute_name;
 	float change_value;
 };
 
 struct SceneChoice{
 	int choice_order;
-	char choice_content[256];
+	string choice_content;
 	ChangeAttribute change_attribute[256];
 };
 
@@ -34,101 +32,56 @@ struct SceneFile{
 	SceneChoice scene_choice[10];
 };
 
-bool is_whitespace(char c){
-	if (c == ' ' || c == '\n' || c == '\t' || c == '\0'){
-		return true;
+fstream::pos_type get_declaration_string(string filename, fstream::pos_type original_pos, string *declaration_string){
+	fstream file;
+	string string_buffer = "";
+	string line_buffer = "";
+	char* char_buffer = NULL;
+	size_t first_punctuation;
+	size_t find_semi_colon = string::npos;
+	size_t find_bracket_open = string::npos;
+	size_t find_bracket_close = string::npos;
+
+	file.open(filename);
+	file.seekg(original_pos);
+
+	while (find_semi_colon == string::npos && find_bracket_open == string::npos && find_bracket_close == string::npos){
+		getline(file, line_buffer);
+		find_semi_colon = line_buffer.find(';');
+		find_bracket_open = line_buffer.find('{');
+		find_bracket_close = line_buffer.find('}');
+	}
+
+	//Determine the first punctuation.
+	if (find_semi_colon < find_bracket_open){
+		if (find_semi_colon < find_bracket_close){
+			first_punctuation = find_semi_colon;
+		}
+		else{
+			first_punctuation = find_bracket_close;
+		}
 	}
 	else{
-		return false;
-	}
-};
-
-//Extract one declaration from a scene script.
-int extract_declaration(FILE* scene_file, char* declaration_line){
-	char current_char;
-	int i;
-	fpos_t *current_position = NULL;
-	fpos_t *end_of_declaration = NULL;
-	if(!fgetpos(scene_file, current_position)){
-		return 1;
-	};
-	while (current_char = fgetc(scene_file)){
-		if (current_char == ';' || current_char == '{' || current_char == '}'){
-			if (!fgetpos(scene_file, end_of_declaration)){
-				return 2;
-			}
-			break;
-		}
-	}
-	//Go back to the beginning of reading.
-	if(!fsetpos(scene_file, current_position)){
-		return 3;
-	}
-	//Transfer the declaration into a string.
-	for (i = 0; *current_position != *end_of_declaration; i++){
-		declaration_line[i] = fgetc(scene_file);
-		if (!fgetpos(scene_file, current_position)){
-			return 4;
-		}
-	}
-	declaration_line[i] = NULL;
-
-	//Offset scene file by a character.
-	fgetc(scene_file);
-	return 0;
-};
-
-//Separate a declaration into two words.
-int declaration_analysis(char* declaration_line, char** analyzed_declaration){
-	int i;
-	int j = -1;
-	int word_count = 0;
-	bool was_white = true;
-	bool is_white = true;
-	bool write_char = false;
-	bool paranthesis_open = false;
-	for (i = 0; declaration_line[i]; i++){
-		//Ignore all whitespaces in ().
-		if (declaration_line[i] == '('){
-			paranthesis_open = true;
-		}
-		else if (declaration_line[i] == ')'){
-			paranthesis_open = false;
-		}
-		if (paranthesis_open && is_whitespace(declaration_line[i])){
-			continue;
+		if (find_bracket_open < find_bracket_close){
+			first_punctuation = find_bracket_open;
 		}
 		else{
-			is_white = is_whitespace(declaration_line[i]);
-		}
-		if (was_white){
-			write_char = false;
-			if (!is_white){
-				write_char = true;
-				j++;
-			}
-		}
-		else{
-			write_char = false;
-			if (is_white){
-				//Append NULL at the end of each word;
-				analyzed_declaration[word_count][j] = NULL;
-				word_count++;
-				j = -1;
-			}
-			else{
-				write_char = true;
-				j++;
-			}
-		}
-		if (write_char){
-			analyzed_declaration[word_count][j] = declaration_line[i];
+			first_punctuation = find_bracket_close;
 		}
 	}
-	if (analyzed_declaration[0]){
-		return 1;
+
+	file.seekg(original_pos);
+	cout << first_punctuation - (unsigned int)original_pos << "\n";
+	if (first_punctuation - (unsigned int)original_pos > 1000){
+		return NULL;
 	}
-	return 0;
+	char_buffer = new char[first_punctuation - (unsigned int)original_pos];
+	file.getline(char_buffer, first_punctuation - original_pos);
+	line_buffer = char_buffer;
+	string_buffer += line_buffer;
+	*declaration_string = string_buffer;
+
+	return file.tellg();
 };
 
 #endif

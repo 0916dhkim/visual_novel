@@ -1,15 +1,15 @@
-#ifdef _WIN32
-#define _CRT_SECURE_NO_DEPRECATE
-#endif
-
 #ifndef SCENE_H
 #define SCENE_H
 
-#include <stdio.h>
+#include <iostream>
+#include <fstream>
+#include <string>
 #include <allegro5\allegro.h>
 #include <allegro5\allegro_image.h>
 #include "scene.h"
 #include "file_inspection.h"
+
+using namespace std;
 
 static int SCENE_HOME = 0;
 static int SCENE_HOME_EDITOR = 1;
@@ -37,15 +37,7 @@ class Scene{
 		int scene_id;
 		int next_scene_id;
 		SceneImage scene_image_array[10];
-		FILE *scene_file;
-	public:
-		bool load_scene(char *filename){
-			char filestringbuffer[256];
-			fopen(filename, "r");
-			while (fgets(filestringbuffer, 256, scene_file)){
-
-			}
-		};
+		string filename;
 };
 
 #endif
