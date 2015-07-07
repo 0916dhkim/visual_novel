@@ -7,29 +7,13 @@
 #include "file_inspection.h"
 using namespace std;
 
-struct SceneImageData{
-	string image_file_name;
-	string image_type;
-	string animation_type;
-};
-
-struct ChangeAttribute{
-	string character_name;
-	string attribute_name;
-	float change_value;
-};
-
-struct SceneChoice{
-	int choice_order;
-	string choice_content;
-	ChangeAttribute change_attribute[256];
-};
-
-struct SceneFile{
-	int scene_id;
-	int scene_type;
-	SceneImageData scene_image_data[10];
-	SceneChoice scene_choice[10];
+bool is_whitespace(char c){
+	if (c == ' ' || c == '\n' || c == '\t' || c == '\0'){
+		return true;
+	}
+	else{
+		return false;
+	}
 };
 
 fstream::pos_type get_declaration_string(string filename, fstream::pos_type original_pos, string *declaration_string){
@@ -46,10 +30,14 @@ fstream::pos_type get_declaration_string(string filename, fstream::pos_type orig
 	file.seekg(original_pos);
 
 	while (find_semi_colon == string::npos && find_bracket_open == string::npos && find_bracket_close == string::npos){
+		if (file.eof()){
+			return NULL;
+		}
 		getline(file, line_buffer);
-		find_semi_colon = line_buffer.find(';');
-		find_bracket_open = line_buffer.find('{');
-		find_bracket_close = line_buffer.find('}');
+		string_buffer += line_buffer + "\n";
+		find_semi_colon = string_buffer.find(';');
+		find_bracket_open = string_buffer.find('{');
+		find_bracket_close = string_buffer.find('}');
 	}
 
 	//Determine the first punctuation.
@@ -71,17 +59,109 @@ fstream::pos_type get_declaration_string(string filename, fstream::pos_type orig
 	}
 
 	file.seekg(original_pos);
-	cout << first_punctuation - (unsigned int)original_pos << "\n";
-	if (first_punctuation - (unsigned int)original_pos > 1000){
-		return NULL;
+	if (first_punctuation == 0){
+		file.get();
+		*declaration_string = "";
 	}
-	char_buffer = new char[first_punctuation - (unsigned int)original_pos];
-	file.getline(char_buffer, first_punctuation - original_pos);
-	line_buffer = char_buffer;
-	string_buffer += line_buffer;
-	*declaration_string = string_buffer;
+	else {
+		char_buffer = new char[first_punctuation + 1];
+		file.get(char_buffer, first_punctuation + 1, '\0');
+		file.get();
+		line_buffer = char_buffer;
+		*declaration_string = line_buffer;
+	}
 
 	return file.tellg();
+};
+
+string get_declaration_type(string declaration_string){
+	size_t i;
+	string string_buffer="";
+	bool was_whitespace = true;
+
+	//Check for the first word in the string.
+	for (i = 0; i < declaration_string.size(); i++){
+		if (was_whitespace){
+			if (!is_whitespace(declaration_string.at(i))){
+				string_buffer += declaration_string.at(i);
+				was_whitespace = false;
+			}
+		}
+		else{
+			if (is_whitespace(declaration_string.at(i))){
+				break;
+				was_whitespace = true;
+			}
+			else{
+				string_buffer += declaration_string.at(i);
+			}
+		}
+	}
+	return string_buffer;
+};
+
+string get_declaration_content(string declaration_string){
+	string declaration_type = get_declaration_type(declaration_string);
+	size_t type_length = declaration_type.size();
+	size_t type_position = declaration_string.find(declaration_type);
+	size_t i;
+	string string_buffer;
+	bool was_whitespace = true;
+	bool parenthesis_open = false;
+	bool quotation_open = false;
+
+	//Check for the first word after type.
+	for (i = type_length + type_position; i < declaration_string.size(); i++){
+		//Ignore all whitespaces between parenthesis.
+		if (declaration_string.at(i) == '('){
+			parenthesis_open = true;
+		}
+		else if (declaration_string.at(i) == ')'){
+			if (parenthesis_open){
+				parenthesis_open = false;
+			}
+			else{
+				cout << "Opening parenthesis needed.\n";
+			}
+		}
+
+		if (declaration_string.at(i) == '\"'){
+			if (quotation_open){
+				quotation_open = false;
+			}
+			else{
+				quotation_open = true;
+			}
+		}
+
+		if (parenthesis_open && is_whitespace(declaration_string.at(i))){
+			continue;
+		}
+
+		if (was_whitespace){
+			if (!is_whitespace(declaration_string.at(i))){
+				string_buffer += declaration_string.at(i);
+				was_whitespace = false;
+			}
+		}
+		else{
+			if (is_whitespace(declaration_string.at(i)) && !quotation_open){
+				break;
+				was_whitespace = true;
+			}
+			else{
+				string_buffer += declaration_string.at(i);
+			}
+		}
+	}
+	return string_buffer;
+};
+
+char get_current_char(string filename, fstream::pos_type current_position){
+	fstream file;
+	file.open(filename);
+	file.seekg(current_position);
+	return file.get();
 };
 
 #endif

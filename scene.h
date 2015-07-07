@@ -22,22 +22,47 @@ static int SCENE_CG_EDITOR = 7;
 
 static int ANIMATION_TYPE_NONE = 0;
 
-class SceneImage{
-private:
-	char image_name[256];
-	float image_x;
-	float image_y;
-	int animation_type;
-public:
+struct SceneImageData{
+	string image_file_name;
+	string image_type;
+	string animation_type;
 };
 
-class Scene{
-private:
-	int scene_type;
-	int scene_id;
-	int next_scene_id;
-	SceneImage scene_image_array[10];
-	string filename;
+struct ChangeAttribute{
+	string character_name;
+	string attribute_name;
+	char attribute_operator;
+	int change_value;
 };
+
+struct SceneChoice{
+	int choice_order;
+	string choice_content;
+	ChangeAttribute change_attribute[256];
+};
+
+struct NextSceneCondition{
+	string attribute;
+	int min;
+	int max;
+};
+
+struct NextScene{
+	int next_id;
+	NextSceneCondition next_scene_condition[256];
+};
+
+struct SceneFile{
+	int scene_id;
+	int scene_type;
+	SceneImageData scene_image_data[10];
+	SceneChoice scene_choice[10];
+	NextScene next_scene[256];
+};
+
+int load_position_attribute(int* position_array, string str);
+int load_content_attribute(string* content_attribute, string str);
+int load_attribute_attribute(ChangeAttribute* attribute_struct, string str);
+int load_scene_file(string filename, SceneFile scene_file_struct);
 
 #endif
