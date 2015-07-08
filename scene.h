@@ -26,6 +26,7 @@ struct SceneImageData{
 	string image_file_name;
 	string image_type;
 	string animation_type;
+	int image_position[10][2];
 };
 
 struct ChangeAttribute{
@@ -38,7 +39,7 @@ struct ChangeAttribute{
 struct SceneChoice{
 	int choice_order;
 	string choice_content;
-	ChangeAttribute change_attribute[256];
+	ChangeAttribute change_attribute[10];
 };
 
 struct NextSceneCondition{
@@ -49,20 +50,20 @@ struct NextSceneCondition{
 
 struct NextScene{
 	int next_id;
-	NextSceneCondition next_scene_condition[256];
+	NextSceneCondition next_scene_condition[10];
 };
 
 struct SceneFile{
 	int scene_id;
-	int scene_type;
+	string scene_type;
 	SceneImageData scene_image_data[10];
 	SceneChoice scene_choice[10];
-	NextScene next_scene[256];
+	NextScene next_scene[10];
 };
 
-int load_position_attribute(int* position_array, string str);
+int load_position_attribute(int* position_array[2], string str);
 int load_content_attribute(string* content_attribute, string str);
 int load_attribute_attribute(ChangeAttribute* attribute_struct, string str);
-int load_scene_file(string filename, SceneFile scene_file_struct);
+int load_scene_file(string filename, SceneFile* scene_file_struct);
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef FILE_INSPECTION
-#define FILE_INSPECTION
+#ifndef FILE_INSPECTION_H
+#define FILE_INSPECTION_H
 
 #include <iostream>
 #include <fstream>

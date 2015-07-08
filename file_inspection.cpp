@@ -1,5 +1,5 @@
-#ifndef FILE_INSPECTION
-#define FILE_INSPECTION
+#ifndef FILE_INSPECTION_H
+#define FILE_INSPECTION_H
 
 #include <iostream>
 #include <fstream>
@@ -17,6 +17,7 @@ bool is_whitespace(char c){
 };
 
 fstream::pos_type get_declaration_string(string filename, fstream::pos_type original_pos, string *declaration_string){
+	fstream::pos_type final_pos;
 	fstream file;
 	string string_buffer = "";
 	string line_buffer = "";
@@ -27,11 +28,16 @@ fstream::pos_type get_declaration_string(string filename, fstream::pos_type orig
 	size_t find_bracket_close = string::npos;
 
 	file.open(filename);
+	if (!file.is_open()){
+		cout << "file not open!\n";
+		return -1;
+	}
 	file.seekg(original_pos);
 
 	while (find_semi_colon == string::npos && find_bracket_open == string::npos && find_bracket_close == string::npos){
 		if (file.eof()){
-			return NULL;
+			file.close();
+			return -1;
 		}
 		getline(file, line_buffer);
 		string_buffer += line_buffer + "\n";
@@ -71,7 +77,9 @@ fstream::pos_type get_declaration_string(string filename, fstream::pos_type orig
 		*declaration_string = line_buffer;
 	}
 
-	return file.tellg();
+	final_pos = file.tellg();
+	file.close();
+	return final_pos;
 };
 
 string get_declaration_type(string declaration_string){
@@ -159,9 +167,12 @@ string get_declaration_content(string declaration_string){
 
 char get_current_char(string filename, fstream::pos_type current_position){
 	fstream file;
+	char char_buffer;
 	file.open(filename);
 	file.seekg(current_position);
-	return file.get();
+	char_buffer = file.get();
+	file.close();
+	return char_buffer;
 };
 
 #endif

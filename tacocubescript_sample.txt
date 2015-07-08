@@ -1,25 +1,25 @@
 id 102323 {
 	type scene;
-};
+}
 image background
 {
 	name hello.png;
 	animation none;
-};
+}
 
 image particle{
 	name particle.png;
 	animation fly;
 	position (13, 58);
 	position (13, 58);
-};
+}
 
 choice 1{
 	content "How are you";
 	attribute (self, time, +2);
 	attribute (Yonu, attraction, +200);
-};
+}
 
 next 2304929{
 	condition (self, time, 0, 10);	
-};
+}

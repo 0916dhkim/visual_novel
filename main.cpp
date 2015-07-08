@@ -1,9 +1,8 @@
 #include <allegro5\allegro.h>
 #include <allegro5\allegro_image.h>
 #include "scene.h"
+#include "game.h"
 
-float SCREEN_WIDTH = 800;
-float SCREEN_HEIGHT = 600;
 int FPS = 60;
 
 int main(){
@@ -33,6 +32,7 @@ int main(){
 		al_wait_for_event(event_queue, &ev);
 		if (ev.type == ALLEGRO_EVENT_TIMER){
 			redraw = true;
+			play_game(ev.type);
 		}
 		else if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE || ev.type == ALLEGRO_EVENT_KEY_DOWN){
 			redraw = false;

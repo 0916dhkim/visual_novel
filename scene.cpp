@@ -39,7 +39,7 @@ struct ChangeAttribute{
 struct SceneChoice{
 	int choice_order;
 	string choice_content;
-	ChangeAttribute change_attribute[256];
+	ChangeAttribute change_attribute[10];
 };
 
 struct NextSceneCondition{
@@ -50,7 +50,7 @@ struct NextSceneCondition{
 
 struct NextScene{
 	int next_id;
-	NextSceneCondition next_scene_condition[256];
+	NextSceneCondition next_scene_condition[10];
 };
 
 struct SceneFile{
@@ -58,10 +58,10 @@ struct SceneFile{
 	string scene_type;
 	SceneImageData scene_image_data[10];
 	SceneChoice scene_choice[10];
-	NextScene next_scene[256];
+	NextScene next_scene[10];
 };
 
-int load_position_attribute(int* position_array, string str){
+int load_position_attribute(int* position_x, string str){
 	string string_buffer[2];
 	int i = 0;
 	int j = 0;
@@ -85,8 +85,8 @@ int load_position_attribute(int* position_array, string str){
 			return 1;
 		}
 	}
-	position_array[0] = atoi(string_buffer[0].c_str());
-	position_array[1] = atoi(string_buffer[1].c_str());
+	*position_x = atoi(string_buffer[0].c_str());
+	*(position_x + 1) = atoi(string_buffer[1].c_str());
 	return 0;
 };
 
@@ -168,7 +168,7 @@ int load_condition_attribute(NextSceneCondition* next_scene_condition, string st
 	return 0;
 };
 
-int load_scene_file(string filename, SceneFile scene_file_struct){
+int load_scene_file(string filename, SceneFile* scene_file_struct){
 	string declaration_buffer;
 	string type_buffer;
 	string content_buffer;
@@ -185,10 +185,11 @@ int load_scene_file(string filename, SceneFile scene_file_struct){
 
 	while (1){
 		file_position = get_declaration_string(filename, file_position, &declaration_buffer);
-		if (file_position == NULL){
+		if (file_position == -1){
 			break;
 		}
 		type_buffer = get_declaration_type(declaration_buffer);
+		content_buffer = get_declaration_content(declaration_buffer);
 		punctuation_buffer = get_current_char(filename, file_position - 1);
 
 		//Determine declaration level.
@@ -218,25 +219,25 @@ int load_scene_file(string filename, SceneFile scene_file_struct){
 
 		//Load types
 		if (declaration_level == 1){
-			if (get_declaration_type(declaration_buffer).compare("id") == 0){
+			if (type_buffer.compare("id") == 0){
 				cout << "id:";
 				current_type = "id";
-				scene_file_struct.scene_id = atoi(get_declaration_content(declaration_buffer).c_str());
+				(*scene_file_struct).scene_id = atoi(content_buffer.c_str());
 			}
-			else if (get_declaration_type(declaration_buffer).compare("image") == 0){
+			else if (type_buffer.compare("image") == 0){
 				cout << "image:";
 				current_type = "image";
-				scene_file_struct.scene_image_data[image_number].image_type = get_declaration_content(declaration_buffer);
+				(*scene_file_struct).scene_image_data[image_number].image_type = content_buffer;
 			}
-			else if (get_declaration_type(declaration_buffer).compare("choice") == 0){
+			else if (type_buffer.compare("choice") == 0){
 				cout << "choice:";
 				current_type = "choice";
-				scene_file_struct.scene_choice[choice_number].choice_order = atoi(get_declaration_content(declaration_buffer).c_str());
+				(*scene_file_struct).scene_choice[choice_number].choice_order = atoi(content_buffer.c_str());
 			}
-			else if (get_declaration_type(declaration_buffer).compare("next") == 0){
+			else if (type_buffer.compare("next") == 0){
 				cout << "next:";
 				current_type = "next";
-				scene_file_struct.next_scene[next_scene_number].next_id == atoi(get_declaration_content(declaration_buffer).c_str());
+				(*scene_file_struct).next_scene[next_scene_number].next_id = atoi(content_buffer.c_str());
 			}
 			else{
 				//syntax error
@@ -248,8 +249,8 @@ int load_scene_file(string filename, SceneFile scene_file_struct){
 		//Load attributes.
 		else if (declaration_level == 2){
 			if (current_type.compare("id") == 0){
-				if (get_declaration_type(declaration_buffer).compare("type") == 0){
-					scene_file_struct.scene_type = get_declaration_content(declaration_buffer);
+				if (type_buffer.compare("type") == 0){
+					(*scene_file_struct).scene_type = content_buffer;
 				}
 				else{
 					//type - attribute mismatch
@@ -257,14 +258,14 @@ int load_scene_file(string filename, SceneFile scene_file_struct){
 				}
 			}
 			else if (current_type.compare("image") == 0){
-				if (get_declaration_type(declaration_buffer).compare("name") == 0){
-					scene_file_struct.scene_image_data[image_number].image_file_name = get_declaration_content(declaration_buffer);
+				if (type_buffer.compare("name") == 0){
+					(*scene_file_struct).scene_image_data[image_number].image_file_name = content_buffer;
 				}
-				else if (get_declaration_type(declaration_buffer).compare("animation") == 0){
-					scene_file_struct.scene_image_data[image_number].animation_type = get_declaration_content(declaration_buffer);
+				else if (type_buffer.compare("animation") == 0){
+					(*scene_file_struct).scene_image_data[image_number].animation_type = content_buffer;
 				}
-				else if (get_declaration_type(declaration_buffer).compare("position") == 0){
-					load_position_attribute(scene_file_struct.scene_image_data[image_number].image_position[position_number], get_declaration_content(declaration_buffer));
+				else if (type_buffer.compare("position") == 0){
+					load_position_attribute(&(*scene_file_struct).scene_image_data[image_number].image_position[position_number][0],content_buffer);
 					position_number++;
 				}
 				else{
@@ -273,10 +274,10 @@ int load_scene_file(string filename, SceneFile scene_file_struct){
 			}
 			else if (current_type.compare("choice") == 0){
 				if (get_declaration_type(declaration_buffer).compare("content") == 0){
-					load_content_attribute(&scene_file_struct.scene_choice[choice_number].choice_content, get_declaration_content(declaration_buffer));
+					load_content_attribute(&(*scene_file_struct).scene_choice[choice_number].choice_content, content_buffer);
 				}
 				else if (get_declaration_type(declaration_buffer).compare("attribute") == 0){
-					load_attribute_attribute(&scene_file_struct.scene_choice[choice_number].change_attribute[attribute_number], get_declaration_content(declaration_buffer));
+					load_attribute_attribute(&(*scene_file_struct).scene_choice[choice_number].change_attribute[attribute_number], content_buffer);
 					attribute_number++;
 				}
 				else{
@@ -285,7 +286,7 @@ int load_scene_file(string filename, SceneFile scene_file_struct){
 			}
 			else if (current_type.compare("next") == 0){
 				if (get_declaration_type(declaration_buffer).compare("condition") == 0){
-					load_condition_attribute(&scene_file_struct.next_scene[next_scene_number].next_scene_condition[next_condition_number], get_declaration_content(declaration_buffer));
+					load_condition_attribute(&(*scene_file_struct).next_scene[next_scene_number].next_scene_condition[next_condition_number], get_declaration_content(declaration_buffer));
 					next_condition_number++;
 				}
 				else{
