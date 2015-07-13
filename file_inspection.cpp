@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <allegro5/allegro.h>
 #include "file_inspection.h"
 using namespace std;
 
@@ -16,115 +17,147 @@ bool is_whitespace(char c){
 	}
 };
 
-fstream::pos_type get_declaration_string(string filename, fstream::pos_type original_pos, string *declaration_string){
-	fstream::pos_type final_pos;
-	fstream file;
-	string string_buffer = "";
-	string line_buffer = "";
-	char* char_buffer = NULL;
-	size_t first_punctuation;
-	size_t find_semi_colon = string::npos;
-	size_t find_bracket_open = string::npos;
-	size_t find_bracket_close = string::npos;
+int get_declaration_string(string filename, int original_pos, ALLEGRO_USTR* declaration_ustr){
+	ALLEGRO_FILE* file = NULL;
+	ALLEGRO_USTR* ustr_buffer = al_ustr_new("");
+	ALLEGRO_USTR* ustr_line_buffer = al_ustr_new("");
+	int semi_colon_pos = -1;
+	int bracket_open_pos = -1;
+	int bracket_close_pos = -1;
+	int first_punct = -1;
+	int last_punct = -1;
+	int final_pos = -1;
 
-	file.open(filename);
-	if (!file.is_open()){
-		cout << "file not open!\n";
+	file = al_fopen(filename.c_str(), "r");
+	if (file == NULL){
+		cout << "Failed to open scene file.\n";
 		return -1;
 	}
-	file.seekg(original_pos);
 
-	while (find_semi_colon == string::npos && find_bracket_open == string::npos && find_bracket_close == string::npos){
-		if (file.eof()){
-			file.close();
+	//Go to original position.
+	al_fseek(file, original_pos, ALLEGRO_SEEK_SET);
+
+	while (semi_colon_pos == -1 && bracket_open_pos == -1 && bracket_close_pos == -1){
+		//Break on EOF.
+		if (al_feof(file)){
+			cout << "EOF reached.\n";
 			return -1;
 		}
-		getline(file, line_buffer);
-		string_buffer += line_buffer + "\n";
-		find_semi_colon = string_buffer.find(';');
-		find_bracket_open = string_buffer.find('{');
-		find_bracket_close = string_buffer.find('}');
+		ustr_line_buffer = al_fget_ustr(file);
+		al_ustr_append(ustr_buffer, ustr_line_buffer);
+
+		semi_colon_pos = al_ustr_find_chr(ustr_buffer, 0, ';');
+		bracket_open_pos = al_ustr_find_chr(ustr_buffer, 0, '{');
+		bracket_close_pos = al_ustr_find_chr(ustr_buffer, 0, '}');
 	}
 
-	//Determine the first punctuation.
-	if (find_semi_colon < find_bracket_open){
-		if (find_semi_colon < find_bracket_close){
-			first_punctuation = find_semi_colon;
+	//Find the first punctuation offset.
+	if (semi_colon_pos > bracket_open_pos){
+		if (semi_colon_pos > bracket_close_pos){
+			last_punct = semi_colon_pos;
 		}
 		else{
-			first_punctuation = find_bracket_close;
+			last_punct = bracket_close_pos;
 		}
 	}
 	else{
-		if (find_bracket_open < find_bracket_close){
-			first_punctuation = find_bracket_open;
+		if (bracket_open_pos > bracket_close_pos){
+			last_punct = bracket_open_pos;
 		}
 		else{
-			first_punctuation = find_bracket_close;
+			last_punct = bracket_close_pos;
+		}
+	}
+	if (semi_colon_pos == -1){
+		semi_colon_pos = last_punct + 1;
+	}
+	if (bracket_open_pos == -1){
+		bracket_open_pos = last_punct + 1;
+	}
+	if (bracket_close_pos == -1){
+		bracket_close_pos = last_punct + 1;
+	}
+	if (semi_colon_pos < bracket_open_pos){
+		if (semi_colon_pos < bracket_close_pos){
+			first_punct = semi_colon_pos;
+		}
+		else{
+			first_punct = bracket_close_pos;
+		}
+	}
+	else{
+		if (bracket_open_pos < bracket_close_pos){
+			first_punct = bracket_open_pos;
+		}
+		else{
+			first_punct = bracket_close_pos;
 		}
 	}
 
-	file.seekg(original_pos);
-	if (first_punctuation == 0){
-		file.get();
-		*declaration_string = "";
-	}
-	else {
-		char_buffer = new char[first_punctuation + 1];
-		file.get(char_buffer, first_punctuation + 1, '\0');
-		file.get();
-		line_buffer = char_buffer;
-		*declaration_string = line_buffer;
-	}
-
-	final_pos = file.tellg();
-	file.close();
+	//Get the declaration ustr.
+	al_fseek(file, original_pos, ALLEGRO_SEEK_SET);
+	al_fread(file, ustr_line_buffer, first_punct);
+	al_ustr_remove_range(ustr_buffer, first_punct, al_ustr_size(ustr_buffer));
+	al_ustr_append_chr(ustr_buffer, 0);
+	al_ustr_assign(declaration_ustr, ustr_buffer);
+	final_pos = al_ftell(file);
+	al_fclose(file);
 	return final_pos;
 };
 
-string get_declaration_type(string declaration_string){
-	size_t i;
-	string string_buffer="";
+string get_declaration_type(ALLEGRO_USTR* declaration_ustr){
+	//size_t i;
+	int i;
+	string string_buffer = "";
 	bool was_whitespace = true;
 
 	//Check for the first word in the string.
-	for (i = 0; i < declaration_string.size(); i++){
+	i = 0;
+	while (1){
+		if (i >= al_ustr_size(declaration_ustr)){
+			break;
+		}
 		if (was_whitespace){
-			if (!is_whitespace(declaration_string.at(i))){
-				string_buffer += declaration_string.at(i);
+			if (!is_whitespace(al_ustr_get(declaration_ustr, i))){
+				string_buffer += al_ustr_get(declaration_ustr, i);
 				was_whitespace = false;
 			}
 		}
 		else{
-			if (is_whitespace(declaration_string.at(i))){
+			if (is_whitespace(al_ustr_get(declaration_ustr, i))){
 				break;
 				was_whitespace = true;
 			}
 			else{
-				string_buffer += declaration_string.at(i);
+				string_buffer += al_ustr_get(declaration_ustr, i);
 			}
 		}
+		i++;
 	}
 	return string_buffer;
 };
 
-string get_declaration_content(string declaration_string){
-	string declaration_type = get_declaration_type(declaration_string);
-	size_t type_length = declaration_type.size();
-	size_t type_position = declaration_string.find(declaration_type);
-	size_t i;
+string get_declaration_content(ALLEGRO_USTR* declaration_ustr){
+	string declaration_type = get_declaration_type(declaration_ustr);
+	int type_length = declaration_type.size();
+	int type_position = al_ustr_find_cstr(declaration_ustr, 0, declaration_type.c_str());
+	int i;
 	string string_buffer;
 	bool was_whitespace = true;
 	bool parenthesis_open = false;
 	bool quotation_open = false;
 
 	//Check for the first word after type.
-	for (i = type_length + type_position; i < declaration_string.size(); i++){
+	i = type_position + type_length;
+	while (1){
+		if (i >= al_ustr_size(declaration_ustr)){
+			break;
+		}
 		//Ignore all whitespaces between parenthesis.
-		if (declaration_string.at(i) == '('){
+		if (al_ustr_get(declaration_ustr, i) == '('){
 			parenthesis_open = true;
 		}
-		else if (declaration_string.at(i) == ')'){
+		else if (al_ustr_get(declaration_ustr, i) == ')'){
 			if (parenthesis_open){
 				parenthesis_open = false;
 			}
@@ -133,7 +166,7 @@ string get_declaration_content(string declaration_string){
 			}
 		}
 
-		if (declaration_string.at(i) == '\"'){
+		if (al_ustr_get(declaration_ustr, i) == '\"'){
 			if (quotation_open){
 				quotation_open = false;
 			}
@@ -142,37 +175,96 @@ string get_declaration_content(string declaration_string){
 			}
 		}
 
-		if (parenthesis_open && is_whitespace(declaration_string.at(i))){
+		if (parenthesis_open && is_whitespace(al_ustr_get(declaration_ustr, i))){
+			i++;
 			continue;
 		}
 
 		if (was_whitespace){
-			if (!is_whitespace(declaration_string.at(i))){
-				string_buffer += declaration_string.at(i);
+			if (!is_whitespace(al_ustr_get(declaration_ustr, i))){
+				string_buffer += al_ustr_get(declaration_ustr, i);
 				was_whitespace = false;
 			}
 		}
 		else{
-			if (is_whitespace(declaration_string.at(i)) && !quotation_open){
+			if (is_whitespace(al_ustr_get(declaration_ustr, i)) && !quotation_open){
 				break;
 				was_whitespace = true;
 			}
 			else{
-				string_buffer += declaration_string.at(i);
+				string_buffer += al_ustr_get(declaration_ustr, i);
+			}
+		}
+		i++;
+	}
+	return string_buffer;
+}
+
+ALLEGRO_USTR* get_declaration_ustr_content(ALLEGRO_USTR* declaration_ustr){
+	string declaration_type = get_declaration_type(declaration_ustr);
+	int type_length = declaration_type.size();
+	int type_position = al_ustr_find_cstr(declaration_ustr, 0, declaration_type.c_str());
+	int i;
+	ALLEGRO_USTR* ustr_buffer = al_ustr_new("");
+	bool was_whitespace = true;
+	bool parenthesis_open = false;
+	bool quotation_open = false;
+
+	//Check for the first word after type.
+	for (i = type_length + type_position; i < (int)al_ustr_length(declaration_ustr); i++){
+		//Ignore all whitespaces between parenthesis.
+		if (al_ustr_get(declaration_ustr, i) == '('){
+			parenthesis_open = true;
+		}
+		else if (al_ustr_get(declaration_ustr, i) == ')'){
+			if (parenthesis_open){
+				parenthesis_open = false;
+			}
+			else{
+				cout << "Opening parenthesis needed.\n";
+			}
+		}
+
+		if (al_ustr_get(declaration_ustr, i) == '\"'){
+			if (quotation_open){
+				quotation_open = false;
+			}
+			else{
+				quotation_open = true;
+			}
+		}
+
+		if (parenthesis_open && is_whitespace(al_ustr_get(declaration_ustr, i))){
+			continue;
+		}
+
+		if (was_whitespace){
+			if (!is_whitespace(al_ustr_get(declaration_ustr, i))){
+				al_ustr_append_chr(ustr_buffer, al_ustr_get(declaration_ustr, i));
+				was_whitespace = false;
+			}
+		}
+		else{
+			if (is_whitespace(al_ustr_get(declaration_ustr, i)) && !quotation_open){
+				break;
+				was_whitespace = true;
+			}
+			else{
+				al_ustr_append_chr(ustr_buffer, al_ustr_get(declaration_ustr, i));
 			}
 		}
 	}
-	return string_buffer;
-};
+	return ustr_buffer;
+}
 
-char get_current_char(string filename, fstream::pos_type current_position){
-	fstream file;
+char get_current_char(string filename, int current_position){
+	ALLEGRO_FILE* file = NULL;
 	char char_buffer;
-	file.open(filename);
-	file.seekg(current_position);
-	char_buffer = file.get();
-	file.close();
+	file = al_fopen(filename.c_str(), "r");
+	al_fseek(file, current_position, ALLEGRO_SEEK_SET);
+	char_buffer = al_fgetc(file);
+	al_fclose(file);
 	return char_buffer;
-};
+}
 
 #endif

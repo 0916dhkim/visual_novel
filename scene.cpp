@@ -4,23 +4,12 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <allegro5\allegro.h>
-#include <allegro5\allegro_image.h>
+#include <allegro5/allegro.h>
+#include <allegro5/allegro_image.h>
 #include "scene.h"
 #include "file_inspection.h"
 
 using namespace std;
-
-static int SCENE_HOME = 0;
-static int SCENE_HOME_EDITOR = 1;
-static int SCENE_SCENE = 2;
-static int SCENE_SCENE_EDITOR = 3;
-static int SCENE_CHARACTER_SELECTION = 4;
-static int SCENE_CHARACTER_SELECTION_EDITOR = 5;
-static int SCENE_CG = 6;
-static int SCENE_CG_EDITOR = 7;
-
-static int ANIMATION_TYPE_NONE = 0;
 
 struct SceneImageData{
 	string image_file_name;
@@ -38,11 +27,12 @@ struct ChangeAttribute{
 
 struct SceneChoice{
 	int choice_order;
-	string choice_content;
+	ALLEGRO_USTR* choice_content;
 	ChangeAttribute change_attribute[10];
 };
 
 struct NextSceneCondition{
+	string character;
 	string attribute;
 	int min;
 	int max;
@@ -90,10 +80,10 @@ int load_position_attribute(int* position_x, string str){
 	return 0;
 };
 
-int load_content_attribute(string* content_attribute, string str){
-	str.erase(str.begin());
-	str.erase(str.end());
-	*content_attribute = str;
+int load_content_attribute(ALLEGRO_USTR* content_attribute, ALLEGRO_USTR* ustr){
+	al_ustr_remove_chr(ustr, 0);
+	al_ustr_remove_chr(ustr, -1);
+	content_attribute = ustr;
 	return 0;
 }
 
@@ -103,6 +93,7 @@ int load_attribute_attribute(ChangeAttribute* attribute_struct, string str){
 	string change_value_buffer;
 	while (1){
 		if (str.at(i) == '('){
+			i++;
 			continue;
 		}
 		else if (str.at(i) == ')'){
@@ -128,6 +119,7 @@ int load_attribute_attribute(ChangeAttribute* attribute_struct, string str){
 				return 1;
 			}
 		}
+		i++;
 	}
 	(*attribute_struct).change_value = atoi(change_value_buffer.c_str());
 	return 0;
@@ -140,6 +132,7 @@ int load_condition_attribute(NextSceneCondition* next_scene_condition, string st
 	string max_buffer;
 	while (1){
 		if (str.at(i) == '('){
+			i++;
 			continue;
 		}
 		else if (str.at(i) == ')'){
@@ -150,18 +143,22 @@ int load_condition_attribute(NextSceneCondition* next_scene_condition, string st
 		}
 		else{
 			if (j == 0){
-				(*next_scene_condition).attribute += str.at(i);
+				(*next_scene_condition).character += str.at(i);
 			}
 			else if (j == 1){
-				min_buffer += str.at(i);
+				(*next_scene_condition).attribute += str.at(i);
 			}
 			else if (j == 2){
+				min_buffer += str.at(i);
+			}
+			else if (j == 3){
 				max_buffer += str.at(i);
 			}
 			else{
 				return 1;
 			}
 		}
+		i++;
 	}
 	(*next_scene_condition).min = atoi(min_buffer.c_str());
 	(*next_scene_condition).max = atoi(max_buffer.c_str());
@@ -169,13 +166,15 @@ int load_condition_attribute(NextSceneCondition* next_scene_condition, string st
 };
 
 int load_scene_file(string filename, SceneFile* scene_file_struct){
-	string declaration_buffer;
+	ALLEGRO_FILE* punct_file;
+	ALLEGRO_USTR* declaration_ustr = al_ustr_new("");
 	string type_buffer;
 	string content_buffer;
+	ALLEGRO_USTR* content_ustr = al_ustr_new("");
 	string current_type = "";
 	char punctuation_buffer;
 	int file_position = 0;
-	int declaration_level=0;
+	int declaration_level = 0;
 	int image_number = 0;
 	int choice_number = 0;
 	int next_scene_number = 0;
@@ -184,13 +183,19 @@ int load_scene_file(string filename, SceneFile* scene_file_struct){
 	int next_condition_number = 0;
 
 	while (1){
-		file_position = get_declaration_string(filename, file_position, &declaration_buffer);
+		file_position = get_declaration_string(filename, file_position, declaration_ustr);
 		if (file_position == -1){
 			break;
 		}
-		type_buffer = get_declaration_type(declaration_buffer);
-		content_buffer = get_declaration_content(declaration_buffer);
-		punctuation_buffer = get_current_char(filename, file_position - 1);
+		type_buffer = get_declaration_type(declaration_ustr);
+		content_buffer = get_declaration_content(declaration_ustr);
+		content_ustr = get_declaration_ustr_content(declaration_ustr);
+		//Get punctuation
+		punct_file = al_fopen(filename.c_str(), "r");
+		al_fseek(punct_file, file_position, ALLEGRO_SEEK_SET);
+		punctuation_buffer = al_fgetc(punct_file);
+		file_position = al_ftell(punct_file);
+		al_fclose(punct_file);
 
 		//Determine declaration level.
 		if (punctuation_buffer == '{'){
@@ -243,7 +248,7 @@ int load_scene_file(string filename, SceneFile* scene_file_struct){
 				//syntax error
 				return 2;
 			}
-			cout << get_declaration_content(declaration_buffer) + "\n";
+			cout << content_buffer + "\n";
 		}
 
 		//Load attributes.
@@ -273,10 +278,10 @@ int load_scene_file(string filename, SceneFile* scene_file_struct){
 				}
 			}
 			else if (current_type.compare("choice") == 0){
-				if (get_declaration_type(declaration_buffer).compare("content") == 0){
-					load_content_attribute(&(*scene_file_struct).scene_choice[choice_number].choice_content, content_buffer);
+				if (type_buffer.compare("content") == 0){
+					load_content_attribute((*scene_file_struct).scene_choice[choice_number].choice_content, content_ustr);
 				}
-				else if (get_declaration_type(declaration_buffer).compare("attribute") == 0){
+				else if (type_buffer.compare("attribute") == 0){
 					load_attribute_attribute(&(*scene_file_struct).scene_choice[choice_number].change_attribute[attribute_number], content_buffer);
 					attribute_number++;
 				}
@@ -285,8 +290,8 @@ int load_scene_file(string filename, SceneFile* scene_file_struct){
 				}
 			}
 			else if (current_type.compare("next") == 0){
-				if (get_declaration_type(declaration_buffer).compare("condition") == 0){
-					load_condition_attribute(&(*scene_file_struct).next_scene[next_scene_number].next_scene_condition[next_condition_number], get_declaration_content(declaration_buffer));
+				if (type_buffer.compare("condition") == 0){
+					load_condition_attribute(&(*scene_file_struct).next_scene[next_scene_number].next_scene_condition[next_condition_number], content_buffer);
 					next_condition_number++;
 				}
 				else{

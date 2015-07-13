@@ -4,23 +4,11 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <allegro5\allegro.h>
-#include <allegro5\allegro_image.h>
-#include "scene.h"
+#include <allegro5/allegro.h>
+#include <allegro5/allegro_image.h>
 #include "file_inspection.h"
 
 using namespace std;
-
-static int SCENE_HOME = 0;
-static int SCENE_HOME_EDITOR = 1;
-static int SCENE_SCENE = 2;
-static int SCENE_SCENE_EDITOR = 3;
-static int SCENE_CHARACTER_SELECTION = 4;
-static int SCENE_CHARACTER_SELECTION_EDITOR = 5;
-static int SCENE_CG = 6;
-static int SCENE_CG_EDITOR = 7;
-
-static int ANIMATION_TYPE_NONE = 0;
 
 struct SceneImageData{
 	string image_file_name;
@@ -38,11 +26,12 @@ struct ChangeAttribute{
 
 struct SceneChoice{
 	int choice_order;
-	string choice_content;
+	ALLEGRO_USTR* choice_content;
 	ChangeAttribute change_attribute[10];
 };
 
 struct NextSceneCondition{
+	string character;
 	string attribute;
 	int min;
 	int max;
@@ -61,9 +50,10 @@ struct SceneFile{
 	NextScene next_scene[10];
 };
 
-int load_position_attribute(int* position_array[2], string str);
-int load_content_attribute(string* content_attribute, string str);
+int load_position_attribute(int* position_x, string str);
+int load_content_attribute(ALLEGRO_USTR* content_attribute, ALLEGRO_USTR* ustr);
 int load_attribute_attribute(ChangeAttribute* attribute_struct, string str);
+int load_condition_attribute(NextSceneCondition* next_scene_condition, string str);
 int load_scene_file(string filename, SceneFile* scene_file_struct);
 
 #endif
