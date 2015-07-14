@@ -42,11 +42,18 @@ struct NextScene{
 	NextSceneCondition next_scene_condition[10];
 };
 
+struct SceneAudio{
+	string audio_type;
+	string audio_name;
+	string play_option;
+};
+
 struct SceneFile{
 	int scene_id;
 	string scene_type;
 	SceneImageData scene_image_data[10];
 	SceneChoice scene_choice[10];
+	SceneAudio scene_audio[5];
 	NextScene next_scene[10];
 };
 
