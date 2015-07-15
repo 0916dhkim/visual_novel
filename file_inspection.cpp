@@ -102,6 +102,8 @@ int get_declaration_string(string filename, int original_pos, ALLEGRO_USTR* decl
 	al_ustr_assign(declaration_ustr, ustr_buffer);
 	final_pos = al_ftell(file);
 	al_fclose(file);
+	al_ustr_free(ustr_buffer);
+	al_ustr_free(ustr_line_buffer);
 	return final_pos;
 };
 
@@ -132,7 +134,7 @@ string get_declaration_type(ALLEGRO_USTR* declaration_ustr){
 				string_buffer += al_ustr_get(declaration_ustr, i);
 			}
 		}
-		i++;
+		al_ustr_next(declaration_ustr, &i);
 	}
 	return string_buffer;
 };
@@ -195,7 +197,7 @@ string get_declaration_content(ALLEGRO_USTR* declaration_ustr){
 				string_buffer += al_ustr_get(declaration_ustr, i);
 			}
 		}
-		i++;
+		al_ustr_next(declaration_ustr, &i);
 	}
 	return string_buffer;
 }

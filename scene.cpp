@@ -43,11 +43,18 @@ struct NextScene{
 	NextSceneCondition next_scene_condition[10];
 };
 
+struct SceneAudio{
+	string audio_type;
+	string audio_name;
+	string play_option;
+};
+
 struct SceneFile{
 	int scene_id;
 	string scene_type;
 	SceneImageData scene_image_data[10];
 	SceneChoice scene_choice[10];
+	SceneAudio scene_audio[5];
 	NextScene next_scene[10];
 };
 
@@ -177,6 +184,7 @@ int load_scene_file(string filename, SceneFile* scene_file_struct){
 	int declaration_level = 0;
 	int image_number = 0;
 	int choice_number = 0;
+	int audio_number = 0;
 	int next_scene_number = 0;
 	int position_number = 0;
 	int attribute_number = 0;
@@ -212,6 +220,9 @@ int load_scene_file(string filename, SceneFile* scene_file_struct){
 				choice_number++;
 				attribute_number = 0;
 			}
+			else if (current_type.compare("audio") == 0){
+				audio_number++;
+			}
 			else if (current_type.compare("next") == 0){
 				next_scene_number++;
 				next_condition_number = 0;
@@ -243,6 +254,11 @@ int load_scene_file(string filename, SceneFile* scene_file_struct){
 				cout << "next:";
 				current_type = "next";
 				(*scene_file_struct).next_scene[next_scene_number].next_id = atoi(content_buffer.c_str());
+			}
+			else if (type_buffer.compare("audio") == 0){
+				cout << "audio:";
+				current_type = "audio";
+				(*scene_file_struct).scene_audio[audio_number].audio_type = content_buffer;
 			}
 			else{
 				//syntax error
@@ -289,6 +305,17 @@ int load_scene_file(string filename, SceneFile* scene_file_struct){
 					return 3;
 				}
 			}
+			else if (current_type.compare("audio") == 0){
+				if (type_buffer.compare("name") == 0){
+					(*scene_file_struct).scene_audio[audio_number].audio_name = content_buffer;
+				}
+				else if (type_buffer.compare("option") == 0){
+					(*scene_file_struct).scene_audio[audio_number].play_option = content_buffer;
+				}
+				else{
+					return 3;
+				}
+			}
 			else if (current_type.compare("next") == 0){
 				if (type_buffer.compare("condition") == 0){
 					load_condition_attribute(&(*scene_file_struct).next_scene[next_scene_number].next_scene_condition[next_condition_number], content_buffer);
@@ -300,6 +327,8 @@ int load_scene_file(string filename, SceneFile* scene_file_struct){
 			}
 		}
 	}
+	al_ustr_free(declaration_ustr);
+	al_ustr_free(content_ustr);
 	return 0;
 };
 

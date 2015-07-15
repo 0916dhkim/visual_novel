@@ -1,5 +1,7 @@
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
+#include <allegro5/allegro_audio.h>
+#include <allegro5/allegro_acodec.h>
 #include "scene.h"
 #include "game.h"
 
@@ -14,6 +16,8 @@ int main(){
 
 	al_init();
 	al_init_image_addon();
+	al_install_audio();
+	al_init_acodec_addon();
 	al_install_keyboard();
 	al_install_mouse();
 
@@ -47,5 +51,8 @@ int main(){
 			al_flip_display();
 		}
 	}
+	al_destroy_event_queue(event_queue);
+	al_destroy_display(display);
+	al_destroy_timer(timer);
 	return 0;
 }
