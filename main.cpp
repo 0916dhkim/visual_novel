@@ -49,6 +49,7 @@ int main(){
 		if (redraw){
 			redraw = false;
 			al_flip_display();
+			al_clear_to_color(al_map_rgb(0,0,0));
 		}
 	}
 	al_destroy_event_queue(event_queue);

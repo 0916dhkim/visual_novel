@@ -100,11 +100,33 @@ int get_declaration_string(string filename, int original_pos, ALLEGRO_USTR* decl
 
 	//Get the declaration ustr.
 	al_fseek(file, original_pos, ALLEGRO_SEEK_SET);
-	al_fread(file, ustr_line_buffer, first_punct);
+	while (1){
+		if (first_punct == semi_colon_pos){
+			if (al_fgetc(file) == ';'){
+				break;
+			}
+		}
+		else if (first_punct == bracket_open_pos){
+			if (al_fgetc(file) == '{'){
+				break;
+			}
+		}
+		else if (first_punct == bracket_close_pos){
+			if (al_fgetc(file) == '}'){
+				break;
+			}
+		}
+		else{
+			al_ustr_free(ustr_buffer);
+			al_ustr_free(ustr_line_buffer);
+			cout << "Scene file reading error: no matching punctuation.\n";
+			return -1;
+		}
+	}
 	al_ustr_remove_range(ustr_buffer, first_punct, al_ustr_size(ustr_buffer));
 	al_ustr_append_chr(ustr_buffer, 0);
 	al_ustr_assign(declaration_ustr, ustr_buffer);
-	final_pos = al_ftell(file);
+	final_pos = al_ftell(file) - 1;
 	al_fclose(file);
 	al_ustr_free(ustr_buffer);
 	al_ustr_free(ustr_line_buffer);

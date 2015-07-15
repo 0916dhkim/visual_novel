@@ -78,13 +78,6 @@ int play_game(ALLEGRO_EVENT_TYPE ev){
 		play_home(ev, scene_file);
 	}
 
-	for (i = 0; i < 10; i++){
-		al_destroy_bitmap(scene_image[i]);
-	}
-	for (i = 0; i < 5; i++){
-		al_destroy_sample(asample[i]);
-	}
-
 	return 0;
 };
 
