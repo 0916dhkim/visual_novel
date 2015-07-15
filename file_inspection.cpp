@@ -31,6 +31,8 @@ int get_declaration_string(string filename, int original_pos, ALLEGRO_USTR* decl
 	file = al_fopen(filename.c_str(), "r");
 	if (file == NULL){
 		cout << "Failed to open scene file.\n";
+		al_ustr_free(ustr_buffer);
+		al_ustr_free(ustr_line_buffer);
 		return -1;
 	}
 
@@ -41,6 +43,8 @@ int get_declaration_string(string filename, int original_pos, ALLEGRO_USTR* decl
 		//Break on EOF.
 		if (al_feof(file)){
 			cout << "EOF reached.\n";
+			al_ustr_free(ustr_buffer);
+			al_ustr_free(ustr_line_buffer);
 			return -1;
 		}
 		ustr_line_buffer = al_fget_ustr(file);
