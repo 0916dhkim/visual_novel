@@ -58,10 +58,9 @@ int play_home(ALLEGRO_EVENT_TYPE home_ev, SceneFile home_scene_file){
 }
 
 int play_game(ALLEGRO_EVENT_TYPE ev){
-	static SceneFile scene_file;
 	static bool end_of_scene = true;
+	static SceneFile scene_file;
 	string scene_type;
-	int i;
 
 	al_reserve_samples(5);
 	font = al_load_ttf_font("DaehanB.ttf", 60, 0);

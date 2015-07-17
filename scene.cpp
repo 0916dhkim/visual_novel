@@ -49,14 +49,57 @@ struct SceneAudio{
 	string play_option;
 };
 
-struct SceneFile{
-	int scene_id;
-	string scene_type;
-	SceneImageData scene_image_data[10];
-	SceneChoice scene_choice[10];
-	SceneAudio scene_audio[5];
-	NextScene next_scene[10];
+class SceneFile{
+	public:
+		int scene_id;
+		string scene_type;
+		SceneImageData scene_image_data[10];
+		SceneChoice scene_choice[10];
+		SceneAudio scene_audio[5];
+		NextScene next_scene[10];
+		SceneFile();
 };
+
+SceneFile::SceneFile(){
+	int i;
+	int j;
+
+	scene_id = -1;
+	scene_type = "";
+	for (i = 0; i < 10; i++){
+		scene_image_data[i].animation_type = "";
+		scene_image_data[i].image_file_name = "";
+		for (j = 0; j < 10; j++){
+			scene_image_data[i].image_position[j][0] = 0;
+			scene_image_data[i].image_position[j][1] = 0;
+		}
+		scene_image_data[i].image_type = "";
+	}
+	for (i = 0; i < 10; i++){
+		for (j = 0; j < 10; j++){
+			scene_choice[i].change_attribute[j].attribute_name = "";
+			scene_choice[i].change_attribute[j].attribute_operator = '\0';
+			scene_choice[i].change_attribute[j].change_value = 0;
+			scene_choice[i].change_attribute[j].character_name = "";
+		}
+		scene_choice[i].choice_content = al_ustr_new("");
+		scene_choice[i].choice_order = -1;
+	}
+	for (i = 0; i < 5; i++){
+		scene_audio[i].audio_name = "";
+		scene_audio[i].audio_type = "";
+		scene_audio[i].play_option = "";
+	}
+	for (i = 0; i < 10; i++){
+		next_scene[i].next_id = -1;
+		for (j = 0; j < 10; j++){
+			next_scene[i].next_scene_condition[j].attribute = "";
+			next_scene[i].next_scene_condition[j].character = "";
+			next_scene[i].next_scene_condition[j].min = 0;
+			next_scene[i].next_scene_condition[j].max = 0;
+		}
+	}
+}
 
 int load_position_attribute(int* position_x, string str){
 	string string_buffer[2];
@@ -88,8 +131,6 @@ int load_position_attribute(int* position_x, string str){
 };
 
 int load_content_attribute(ALLEGRO_USTR* content_attribute, ALLEGRO_USTR* ustr){
-	al_ustr_remove_chr(ustr, 0);
-	al_ustr_remove_chr(ustr, -1);
 	al_ustr_assign(content_attribute, ustr);
 	return 0;
 }
@@ -295,7 +336,7 @@ int load_scene_file(string filename, SceneFile* scene_file_struct){
 			}
 			else if (current_type.compare("choice") == 0){
 				if (type_buffer.compare("content") == 0){
-					load_content_attribute((*scene_file_struct).scene_choice[choice_number].choice_content, content_ustr);
+					al_ustr_assign((*scene_file_struct).scene_choice[choice_number].choice_content, content_ustr);
 				}
 				else if (type_buffer.compare("attribute") == 0){
 					load_attribute_attribute(&(*scene_file_struct).scene_choice[choice_number].change_attribute[attribute_number], content_buffer);
