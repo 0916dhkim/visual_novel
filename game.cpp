@@ -4,6 +4,8 @@
 #include <string>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_acodec.h>
 #include "scene.h"
@@ -17,6 +19,7 @@ static string filename;
 static int next_scene_id = 0;
 static ALLEGRO_BITMAP *scene_image[10];
 static ALLEGRO_SAMPLE *asample[5];
+static ALLEGRO_FONT *font = NULL;
 
 int load_home(SceneFile home_scene_file){
 	int i;
@@ -40,8 +43,14 @@ int play_home(ALLEGRO_EVENT_TYPE home_ev, SceneFile home_scene_file){
 		if (home_scene_file.scene_image_data[i].image_type.compare("background") == 0){
 			al_draw_scaled_bitmap(scene_image[i], 0, 0, al_get_bitmap_width(scene_image[i]), al_get_bitmap_height(scene_image[i]), 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 		}
+		else if (home_scene_file.scene_image_data[i].image_type.compare("choice") == 0){
+			al_draw_bitmap(scene_image[i], 0, 0, 0);
+		}
 		if (home_scene_file.scene_audio[0].audio_type.compare("play") == 0){
 			al_play_sample(asample[0], 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_LOOP, NULL);
+		}
+		if (home_scene_file.scene_choice[0].choice_order != NULL){
+			//al_draw_text(font, al_map_rgb(0,0,0), 20, 10, 0, "Hello");
 		}
 
 	}
@@ -55,6 +64,7 @@ int play_game(ALLEGRO_EVENT_TYPE ev){
 	int i;
 
 	al_reserve_samples(5);
+	font = al_load_ttf_font("DaehanB.ttf", 60, 0);
 
 	if (end_of_scene){
 		filename = "scene_" + to_string(next_scene_id) + ".txt";

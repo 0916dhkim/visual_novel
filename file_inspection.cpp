@@ -142,7 +142,7 @@ string get_declaration_type(ALLEGRO_USTR* declaration_ustr){
 	//Check for the first word in the string.
 	i = 0;
 	while (1){
-		if (i >= al_ustr_size(declaration_ustr)){
+		if (i >= (int)al_ustr_size(declaration_ustr)){
 			break;
 		}
 		if (was_whitespace){
@@ -178,7 +178,7 @@ string get_declaration_content(ALLEGRO_USTR* declaration_ustr){
 	//Check for the first word after type.
 	i = type_position + type_length;
 	while (1){
-		if (i >= al_ustr_size(declaration_ustr)){
+		if (i >= (int)al_ustr_size(declaration_ustr)){
 			break;
 		}
 		//Ignore all whitespaces between parenthesis.
@@ -239,7 +239,11 @@ ALLEGRO_USTR* get_declaration_ustr_content(ALLEGRO_USTR* declaration_ustr){
 	bool quotation_open = false;
 
 	//Check for the first word after type.
-	for (i = type_length + type_position; i < (int)al_ustr_length(declaration_ustr); i++){
+	i = type_position + type_length;
+	while (1){
+		if (i >= (int)al_ustr_size(declaration_ustr)){
+			break;
+		}
 		//Ignore all whitespaces between parenthesis.
 		if (al_ustr_get(declaration_ustr, i) == '('){
 			parenthesis_open = true;
@@ -263,6 +267,7 @@ ALLEGRO_USTR* get_declaration_ustr_content(ALLEGRO_USTR* declaration_ustr){
 		}
 
 		if (parenthesis_open && is_whitespace(al_ustr_get(declaration_ustr, i))){
+			al_ustr_next(declaration_ustr, &i);
 			continue;
 		}
 
@@ -281,6 +286,7 @@ ALLEGRO_USTR* get_declaration_ustr_content(ALLEGRO_USTR* declaration_ustr){
 				al_ustr_append_chr(ustr_buffer, al_ustr_get(declaration_ustr, i));
 			}
 		}
+		al_ustr_next(declaration_ustr, &i);
 	}
 	return ustr_buffer;
 }

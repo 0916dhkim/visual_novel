@@ -90,7 +90,7 @@ int load_position_attribute(int* position_x, string str){
 int load_content_attribute(ALLEGRO_USTR* content_attribute, ALLEGRO_USTR* ustr){
 	al_ustr_remove_chr(ustr, 0);
 	al_ustr_remove_chr(ustr, -1);
-	content_attribute = ustr;
+	al_ustr_assign(content_attribute, ustr);
 	return 0;
 }
 
