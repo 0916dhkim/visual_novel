@@ -13,6 +13,7 @@ int main(){
 	ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 	ALLEGRO_DISPLAY *display = NULL;
 	ALLEGRO_TIMER *timer = NULL;
+	ALLEGRO_FONT* font = NULL;
 	bool redraw = true;
 	bool mouse_click = false;
 
@@ -28,6 +29,7 @@ int main(){
 	display = al_create_display(SCREEN_WIDTH, SCREEN_HEIGHT);
 	event_queue = al_create_event_queue();
 	timer = al_create_timer(1.0 / FPS);
+	font = al_load_ttf_font("DaehanB.ttf", 30, ALLEGRO_TTF_MONOCHROME);
 
 	al_register_event_source(event_queue, al_get_timer_event_source(timer));
 	al_register_event_source(event_queue, al_get_display_event_source(display));
@@ -40,7 +42,7 @@ int main(){
 		al_wait_for_event(event_queue, &ev);
 		if (ev.type == ALLEGRO_EVENT_TIMER){
 			redraw = true;
-			play_game(ev.type);
+			play_game(ev.type, font);
 		}
 		else if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE || ev.type == ALLEGRO_EVENT_KEY_DOWN){
 			redraw = false;

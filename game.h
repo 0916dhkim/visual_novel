@@ -8,14 +8,15 @@
 #include "game.h"
 using namespace std;
 
-float SCREEN_WIDTH = 800;
-float SCREEN_HEIGHT = 600;
+float SCREEN_WIDTH = 1200;
+float SCREEN_HEIGHT = 900;
 
 static string filename;
 static int next_scene_id = 0;
 static ALLEGRO_BITMAP *scene_image[10];
 
-int play_home(ALLEGRO_EVENT_TYPE home_ev, SceneFile home_scene_file);
-int play_game(ALLEGRO_EVENT_TYPE ev);
+int load_home(SceneFile home_scene_file);
+int play_home(ALLEGRO_EVENT_TYPE home_ev, SceneFile home_scene_file, ALLEGRO_FONT* font);
+int play_game(ALLEGRO_EVENT_TYPE ev, ALLEGRO_FONT* font);
 
 #endif

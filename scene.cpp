@@ -131,6 +131,8 @@ int load_position_attribute(int* position_x, string str){
 };
 
 int load_content_attribute(ALLEGRO_USTR* content_attribute, ALLEGRO_USTR* ustr){
+	al_ustr_remove_chr(ustr, 0);
+	al_ustr_remove_chr(ustr, al_ustr_size(ustr) - 1);
 	al_ustr_assign(content_attribute, ustr);
 	return 0;
 }
@@ -336,7 +338,7 @@ int load_scene_file(string filename, SceneFile* scene_file_struct){
 			}
 			else if (current_type.compare("choice") == 0){
 				if (type_buffer.compare("content") == 0){
-					al_ustr_assign((*scene_file_struct).scene_choice[choice_number].choice_content, content_ustr);
+					load_content_attribute((*scene_file_struct).scene_choice[choice_number].choice_content, content_ustr);
 				}
 				else if (type_buffer.compare("attribute") == 0){
 					load_attribute_attribute(&(*scene_file_struct).scene_choice[choice_number].change_attribute[attribute_number], content_buffer);
